@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Music Classifier</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0d0f12;
+            color: #f1f1f1;
+        }
+
+        /* ---------------- HEADER ---------------- */
+
+        header {
+            background: #15181d;
+            border-bottom: 1px solid #292d34;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+
+        header span {
+            color: #8d95a1;
+            font-size: 13px;
+        }
+
+        /* ---------------- CONTENEDOR ---------------- */
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        /* ---------------- BOTONES ---------------- */
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .primary {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .primary:hover {
+            background: #8b5cf6;
+        }
+
+        .danger {
+            background: #3a1c21;
+            color: #ff6b6b;
+        }
+
+        /* ---------------- TABS ---------------- */
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .tab {
+            background: #191c21;
+            color: #9da4af;
+        }
+
+        .tab.active {
+            background: #7c3aed;
+            color: white;
+        }
+
+        /* ---------------- PANEL ---------------- */
+
+        .panel {
+            background: #15181d;
+            border: 1px solid #292d34;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+        }
+
+        /* ---------------- FILTROS ---------------- */
+
+        .filters {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: #0d0f12;
+            border: 1px solid #30353d;
+            color: white;
+            padding: 11px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #7c3aed;
+        }
+
+        /* ---------------- TABLA ---------------- */
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            color: #8d95a1;
+            font-size: 12px;
+            text-transform: uppercase;
+            padding: 12px;
+            border-bottom: 1px solid #292d34;
+        }
+
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #22262d;
+        }
+
+        tr:hover {
+            background: #191c21;
+        }
+
+        /* ---------------- ETIQUETAS ---------------- */
+
+        .tag {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            background: #29203e;
+            color: #b794ff;
+            font-size: 12px;
+        }
+
+        .energy {
+            color: #fbbf24;
+        }
+
+        .bpm {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        /* ---------------- MODAL ---------------- */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #181b20;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #30353d;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #9da4af;
+            margin-bottom: 6px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .cancel {
+            background: #292d34;
+            color: white;
+        }
+
+        /* ---------------- RESPONSIVE ---------------- */
+
+        @media (max-width: 900px) {
+            .filters {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>🎧 MUSIC CLASSIFIER</h1>
+        <span>DJ Library · Ableton Live 12</span>
+    </div>
+
+    <button class="primary" onclick="openModal()">
+        + Añadir tema
+    </button>
+</header>
+
+
+<div class="container">
+
+    <!-- TABS -->
+
+    <div class="tabs">
+
+        <button class="tab active" onclick="changeSection('dj', this)">
+            🎧 DJ / Mesa
+        </button>
+
+        <button class="tab" onclick="changeSection('ableton', this)">
+            🎹 Ableton Live 12
+        </button>
+
+    </div>
+
+
+    <!-- FILTROS -->
+
+    <div class="panel">
+
+        <h2>Clasificador</h2>
+
+        <div class="filters">
+
+            <input
+                type="text"
+                id="search"
+                placeholder="Buscar artista, tema..."
+                oninput="renderTracks()"
+            >
+
+            <select id="styleFilter" onchange="renderTracks()">
+                <option value="">Todos los estilos</option>
+                <option value="Techno">Techno</option>
+                <option value="House">House</option>
+                <option value="Minimal">Minimal</option>
+                <option value="Melodic">Melodic</option>
+                <option value="Progressive">Progressive</option>
+                <option value="Electro">Electro</option>
+                <option value="Ambient">Ambient</option>
+                <option value="Hip Hop">Hip Hop</option>
+                <option value="Experimental">Experimental</option>
+            </select>
+
+            <select id="bpmFilter" onchange="renderTracks()">
+                <option value="">Todos los BPM</option>
+                <option value="slow">Menos de 110</option>
+                <option value="medium">110 - 125</option>
+                <option value="fast">126 - 140</option>
+                <option value="veryfast">Más de 140</option>
+            </select>
+
+            <select id="energyFilter" onchange="renderTracks()">
+                <option value="">Toda energía</option>
+                <option value="1">1 - Baja</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5 - Máxima</option>
+            </select>
+
+            <button class="cancel" onclick="clearFilters()">
+                Limpiar
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- LISTA -->
+
+    <div class="panel">
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Tema</th>
+                        <th>Artista</th>
+                        <th>Estilo</th>
+                        <th>BPM</th>
+                        <th>Tonalidad</th>
+                        <th>Energía</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody id="trackList"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL -->
+
+<div class="modal" id="modal">
+
+    <div class="modal-content">
+
+        <h2>Añadir tema</h2>
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label>Nombre del tema</label>
+
+                <input
+                    type="text"
+                    id="trackName"
+                    placeholder="Ej. My Track"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Artista / Proyecto</label>
+
+                <input
+                    type="text"
+                    id="artist"
+                    placeholder="Ej. Mi Proyecto"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Estilo</label>
+
+                <select id="style">
+
+                    <option>Techno</option>
+                    <option>House</option>
+                    <option>Minimal</option>
+                    <option>Melodic</option>
+                    <option>Progressive</option>
+                    <option>Electro</option>
+                    <option>Ambient</option>
+                    <option>Hip Hop</option>
+                    <option>Experimental</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+                <label>BPM</label>
+
+                <input
+                    type="number"
+                    id="bpm"
+                    placeholder="128"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Tonalidad</label>
+
+                <input
+                    type="text"
+                    id="key"
+                    placeholder="Ej. Am"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Energía (1-5)</label>
+
+                <select id="energy">
+
+                    <option value="1">1 - Baja</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Máxima</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                class="cancel"
+                onclick="closeModal()"
+            >
+                Cancelar
+            </button>
+
+            <button
+                class="primary"
+                onclick="addTrack()"
+            >
+                Guardar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* --------------------------------
+       DATOS INICIALES
+    -------------------------------- */
+
+    let currentSection = "dj";
+
+    let tracks = JSON.parse(
+        localStorage.getItem("musicClassifierTracks")
+    ) || [
+
+        {
+            name: "Demo Techno",
+            artist: "Mi Proyecto",
+            style: "Techno",
+            bpm: 128,
+            key: "Am",
+            energy: 4,
+            section: "dj"
+        },
+
+        {
+            name: "Melodic Idea",
+            artist: "Ableton Project",
+            style: "Melodic",
+            bpm: 120,
+            key: "Fm",
+            energy: 3,
+            section: "ableton"
+        }
+
+    ];
+
+
+    /* --------------------------------
+       CAMBIAR SECCIÓN
+    -------------------------------- */
+
+    function changeSection(section, button) {
+
+        currentSection = section;
+
+        document
+            .querySelectorAll(".tab")
+            .forEach(tab => tab.classList.remove("active"));
+
+        button.classList.add("active");
+
+        renderTracks();
+    }
+
+
+    /* --------------------------------
+       MOSTRAR TEMAS
+    -------------------------------- */
+
+    function renderTracks() {
+
+        const list = document.getElementById("trackList");
+
+        const search =
+            document
+                .getElementById("search")
+                .value
+                .toLowerCase();
+
+        const style =
+            document
+                .getElementById("styleFilter")
+                .value;
+
+        const bpmFilter =
+            document
+                .getElementById("bpmFilter")
+                .value;
+
+        const energy =
+            document
+                .getElementById("energyFilter")
+                .value;
+
+
+        const filtered = tracks.filter(track => {
+
+            if (track.section !== currentSection) {
+                return false;
+            }
+
+            if (
+                search &&
+                !track.name.toLowerCase().includes(search) &&
+                !track.artist.toLowerCase().includes(search)
+            ) {
+                return false;
+            }
+
+            if (style && track.style !== style) {
+                return false;
+            }
+
+            if (energy && track.energy != energy) {
+                return false;
+            }
+
+            if (bpmFilter === "slow" && track.bpm >= 110) {
+                return false;
+            }
+
+            if (
+                bpmFilter === "medium" &&
+                (track.bpm < 110 || track.bpm > 125)
+            ) {
+                return false;
+            }
+
+            if (
+                bpmFilter === "fast" &&
+                (track.bpm < 126 || track.bpm > 140)
+            ) {
+                return false;
+            }
+
+            if (bpmFilter === "veryfast" && track.bpm <= 140) {
+                return false;
+            }
+
+            return true;
+
+        });
+
+
+        list.innerHTML = "";
+
+
+        if (filtered.length === 0) {
+
+            list.innerHTML = `
+                <tr>
+                    <td colspan="7"
+                        style="text-align:center;color:#777;padding:30px;">
+                        No hay temas en esta categoría.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        filtered.forEach((track, index) => {
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+
+                <td>
+                    <strong>${track.name}</strong>
+                </td>
+
+                <td>
+                    ${track.artist}
+                </td>
+
+                <td>
+                    <span class="tag">
+                        ${track.style}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="bpm">
+                        ${track.bpm}
+                    </span>
+                </td>
+
+                <td>
+                    ${track.key}
+                </td>
+
+                <td>
+                    <span class="energy">
+                        ${"★".repeat(track.energy)}
+                        ${"☆".repeat(5 - track.energy)}
+                    </span>
+                </td>
+
+                <td>
+                    <button
+                        class="danger"
+                        onclick="deleteTrack(${tracks.indexOf(track)})">
+                        ×
+                    </button>
+                </td>
+
+            `;
+
+            list.appendChild(row);
+
+        });
+
+    }
+
+
+    /* --------------------------------
+       MODAL
+    -------------------------------- */
+
+    function openModal() {
+
+        document
+            .getElementById("modal")
+            .classList.add("show");
+
+    }
+
+
+    function closeModal() {
+
+        document
+            .getElementById("modal")
+            .classList.remove("show");
+
+    }
+
+
+    /* --------------------------------
+       AÑADIR TEMA
+    -------------------------------- */
+
+    function addTrack() {
+
+        const name =
+            document.getElementById("trackName").value.trim();
+
+        const artist =
+            document.getElementById("artist").value.trim();
+
+        const style =
+            document.getElementById("style").value;
+
+        const bpm =
+            Number(document.getElementById("bpm").value);
+
+        const key =
+            document.getElementById("key").value.trim();
+
+        const energy =
+            Number(document.getElementById("energy").value);
+
+
+        if (!name) {
+
+            alert("Introduce el nombre del tema.");
+
+            return;
+
+        }
+
+
+        const newTrack = {
+
+            name: name,
+
+            artist: artist || "Sin artista",
+
+            style: style,
+
+            bpm: bpm || 0,
+
+            key: key || "-",
+
+            energy: energy,
+
+            section: currentSection
+
+        };
+
+
+        tracks.push(newTrack);
+
+
+        saveTracks();
+
+        renderTracks();
+
+        closeModal();
+
+
+        document.getElementById("trackName").value = "";
+        document.getElementById("artist").value = "";
+        document.getElementById("bpm").value = "";
+        document.getElementById("key").value = "";
+
+    }
+
+
+    /* --------------------------------
+       ELIMINAR
+    -------------------------------- */
+
+    function deleteTrack(index) {
+
+        if (
+            !confirm("¿Eliminar este tema?")
+        ) {
+            return;
+        }
+
+
+        tracks.splice(index, 1);
+
+        saveTracks();
+
+        renderTracks();
+
+    }
+
+
+    /* --------------------------------
+       GUARDAR
+    -------------------------------- */
+
+    function saveTracks() {
+
+        localStorage.setItem(
+            "musicClassifierTracks",
+            JSON.stringify(tracks)
+        );
+
+    }
+
+
+    /* --------------------------------
+       LIMPIAR FILTROS
+    -------------------------------- */
+
+    function clearFilters() {
+
+        document.getElementById("search").value = "";
+
+        document.getElementById("styleFilter").value = "";
+
+        document.getElementById("bpmFilter").value = "";
+
+        document.getElementById("energyFilter").value = "";
+
+        renderTracks();
+
+    }
+
+
+    /* --------------------------------
+       INICIAR
+    -------------------------------- */
+
+    renderTracks();
+
+</script>
+
+</body>
+</html>
